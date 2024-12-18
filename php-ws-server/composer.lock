@@ -1,0 +1,120 @@
+{
+    "_readme": [
+        "This file locks the dependencies of your project to a known state",
+        "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
+        "This file is @generated automatically"
+    ],
+    "content-hash": "c0ee41fe2d19dbb6c58a8a6be167cfde",
+    "packages": [
+        {
+            "name": "bloatless/php-websocket",
+            "version": "v3.0.3",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/bloatless/php-websocket.git",
+                "reference": "4de006c126644f8ff868f4249ecb648b207cb697"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/bloatless/php-websocket/zipball/4de006c126644f8ff868f4249ecb648b207cb697",
+                "reference": "4de006c126644f8ff868f4249ecb648b207cb697",
+                "shasum": ""
+            },
+            "require": {
+                "ext-json": "*",
+                "ext-sockets": "*",
+                "php": "^7.4|^8.0",
+                "psr/log": "^1.1"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "Bloatless\\WebSocket\\": "src/",
+                    "Bloatless\\WebSocketExamples\\": "examples/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Simon Samtleben",
+                    "email": "simon@bloatless.org"
+                }
+            ],
+            "description": "A simple WebSocket Server and Client implementation in PHP.",
+            "homepage": "https://bloatless.org",
+            "keywords": [
+                "WebSockets",
+                "bloatless",
+                "php",
+                "websocket-server"
+            ],
+            "support": {
+                "issues": "https://github.com/bloatless/php-websocket/issues",
+                "source": "https://github.com/bloatless/php-websocket/tree/v3.0.3"
+            },
+            "time": "2022-08-20T08:39:14+00:00"
+        },
+        {
+            "name": "psr/log",
+            "version": "1.1.4",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/php-fig/log.git",
+                "reference": "d49695b909c3b7628b6289db5479a1c204601f11"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/php-fig/log/zipball/d49695b909c3b7628b6289db5479a1c204601f11",
+                "reference": "d49695b909c3b7628b6289db5479a1c204601f11",
+                "shasum": ""
+            },
+            "require": {
+                "php": ">=5.3.0"
+            },
+            "type": "library",
+            "extra": {
+                "branch-alias": {
+                    "dev-master": "1.1.x-dev"
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "Psr\\Log\\": "Psr/Log/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "PHP-FIG",
+                    "homepage": "https://www.php-fig.org/"
+                }
+            ],
+            "description": "Common interface for logging libraries",
+            "homepage": "https://github.com/php-fig/log",
+            "keywords": [
+                "log",
+                "psr",
+                "psr-3"
+            ],
+            "support": {
+                "source": "https://github.com/php-fig/log/tree/1.1.4"
+            },
+            "time": "2021-05-03T11:20:27+00:00"
+        }
+    ],
+    "packages-dev": [],
+    "aliases": [],
+    "minimum-stability": "stable",
+    "stability-flags": {},
+    "prefer-stable": false,
+    "prefer-lowest": false,
+    "platform": {},
+    "platform-dev": {},
+    "plugin-api-version": "2.6.0"
+}

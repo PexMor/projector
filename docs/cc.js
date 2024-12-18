@@ -1,43 +1,32 @@
 // Create a client instance
 const mqtt_host = "localhost"; //location.hostname
 const mqtt_port = 1884; //location.port
-const clientId = "cc-" + Math.random().toString(16).substring(2, 8);
-client = new Paho.MQTT.Client(mqtt_host, Number(mqtt_port), clientId);
+const clientId = "cc" + Math.random().toString(16).substring(2, 8);
 
-// set callback handlers
-client.onConnectionLost = onConnectionLost;
-client.onMessageArrived = onMessageArrived;
+const elMsgs = document.getElementById("msgs");
 
-// connect the client
-client.connect({ onSuccess: onConnect });
-
-// called when the client connects
-function onConnect() {
-  // Once a connection has been made, make a subscription and send a message.
-  console.log("onConnect");
-  client.subscribe("from-projector");
-  message = new Paho.MQTT.Message(JSON.stringify({ message: "Hello" }));
-  message.destinationName = "to-projector";
-  client.send(message);
-}
-
-// called when the client loses its connection
-function onConnectionLost(responseObject) {
-  if (responseObject.errorCode !== 0) {
-    console.log("onConnectionLost:" + responseObject.errorMessage);
+const onMessage = (payload) => {
+  if (payload.txt) {
+    elMsgs.innerHTML += `${payload.txt}<br/>`;
   }
-}
+};
 
-// called when a message arrives
-function onMessageArrived(message) {
-  console.log("onMessageArrived:" + message.payloadString);
-}
+const sendInner = msgSrvPlain(mqtt_host, mqtt_port, onMessage, () => {
+  console.log("Connected");
+});
+window.sendInner = sendInner;
 
-const elInput = document.getElementById("input");
+// const sendInner = msgSrvMqtt(
+//   mqtt_host,
+//   mqtt_port,
+//   clientId,
+//   "to-projector",
+//   onMessage
+// );
+// window.sendInner = sendInner;
 
-function send() {
-  message = new Paho.MQTT.Message(JSON.stringify({ txt: elInput.value }));
-  message.destinationName = "to-projector";
-  client.send(message);
+window.send = () => {
+  const value = document.getElementById("input").value;
+  sendInner("from-projector", value);
   return false;
-}
+};
