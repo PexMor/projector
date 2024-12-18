@@ -1,0 +1,3 @@
+# form name:password
+# can be plain and then updated with 'mosquitto_passwd -U passwordfile'
+name:password
