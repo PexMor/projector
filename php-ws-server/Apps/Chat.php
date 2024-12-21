@@ -41,6 +41,7 @@ class Chat extends Application
     public function onDisconnect(Connection $connection): void
     {
         $id = $connection->getClientId();
+        print("Client disconnected: " . $id . PHP_EOL);
         unset($this->clients[$id], $this->nicknames[$id]);
     }
 
