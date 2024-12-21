@@ -1,5 +1,9 @@
 # Websocket messaging
 
+**TL;DR** Open <https://pexmor.github.io/projector/> and scan the QR with your phone.
+
+> Note:The **github.io** current version does not pair the projector with any backend. But that is an optional feature, which can be done with little to no effort.
+
 ## static html serving
 
 ```bash
