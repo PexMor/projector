@@ -8,10 +8,14 @@ let client;
 const butCommands = [
   { showVideo: { label: "Show Video #1", meta: { id: "id1" } } },
   { showVideo: { label: "Show Video #2", meta: { id: "id2" } } },
-  { showLogo: { label: "Show Logo #1", meta: { id: "id1" } } },
-  { showLogo: { label: "Show Logo #2", meta: { id: "id2" } } },
+  { showLogo: { label: "Show Logo #1", meta: { id: "id1", timeout: "5s" } } },
+  { showLogo: { label: "Show Logo #2", meta: { id: "id2", timeout: "5s" } } },
+  { showLogo: { label: "Show Logo #3", meta: { id: "id3", timeout: "5s" } } },
   { showLogo: { label: "Show Logo #3", meta: { id: "id3" } } },
+  { showTable: { label: "Show Table", meta: { id: "id1", timeout: "5s" } } },
   { showTable: { label: "Show Table", meta: { id: "id1" } } },
+  { hideLogo: { label: "Hide Logo" } },
+  { hideTable: { label: "Hide Table" } },
 ];
 const commands = Object.keys(butCommands);
 let cmdState = 0;
@@ -151,6 +155,25 @@ const table = {
     </table>`,
 };
 
+const timeStrToMs = (timeStr) => {
+  let timeMs = 0;
+  // convert timestring like 1h2m3s to milliseconds
+  const re = /(\d+)(h|m|s)/g;
+  let match;
+  while ((match = re.exec(timeStr)) !== null) {
+    let unit = match[2];
+    let value = parseInt(match[1]);
+    if (unit === "h") {
+      timeMs += value * 60 * 60 * 1000;
+    } else if (unit === "m") {
+      timeMs += value * 60 * 1000;
+    } else if (unit === "s") {
+      timeMs += value * 1000;
+    }
+  }
+  return timeMs;
+};
+
 const showCC = () => {
   const elStatus = document.getElementById("status");
   elStatus.setAttribute("class", "paired");
@@ -176,7 +199,14 @@ const showCC = () => {
     const elButton = document.createElement("button");
     let cmdId = Object.keys(command)[0];
     let cmdVal = command[cmdId];
-    elButton.innerHTML = cmdVal.label;
+    if (
+      typeof cmdVal.meta !== "undefined" &&
+      typeof cmdVal.meta.timeout !== "undefined"
+    ) {
+      elButton.innerHTML = `${cmdVal.label} (timeout=${cmdVal.meta.timeout})`;
+    } else {
+      elButton.innerHTML = cmdVal.label;
+    }
     elButton.addEventListener("click", () => {
       sendMsg({ op: cmdId, meta: { ...cmdVal.meta } });
     });
@@ -216,6 +246,11 @@ const execCommand = (cmd) => {
       );
       if (Object.keys(logo).includes(cmd.meta.id)) {
         elLogo.innerHTML = logo[cmd.meta.id];
+        if (cmd.meta.timeout) {
+          setTimeout(() => {
+            elLogo.innerHTML = "";
+          }, timeStrToMs(cmd.meta.timeout));
+        }
       } else {
         console.error("Unknown logo meta:", cmd.meta);
       }
@@ -234,12 +269,23 @@ const execCommand = (cmd) => {
         elProTable.innerHTML = table[cmd.meta.id];
         elContainer.appendChild(elProTable);
         elMain.appendChild(elContainer);
+        if (cmd.meta.timeout) {
+          setTimeout(() => {
+            elMain.innerHTML = "";
+          }, timeStrToMs(cmd.meta.timeout));
+        }
       } else {
         console.error("Unknown logo meta:", cmd.meta);
       }
     } else {
       console.error("Unknown logo meta:", cmd.meta);
     }
+  } else if (cmd.op && cmd.op === "hideLogo") {
+    const elLogo = document.getElementById("pro-logo");
+    elLogo.innerHTML = "";
+  } else if (cmd.op && cmd.op === "hideTable") {
+    const elMain = document.getElementById("main");
+    elMain.innerHTML = "";
   } else {
     console.log("Unknown command:", cmd);
   }
