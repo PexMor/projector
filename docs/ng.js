@@ -92,7 +92,6 @@ const onConnect = () => {
     mqttIface.confRemoteProjector(remoteUuid);
     console.log("remoteUuid:", remoteUuid);
     showCC();
-    // sendMsg({ op: "connected" });
   }
 };
 
@@ -103,15 +102,25 @@ const onDisconnect = () => {
   elMain.innerHTML = "Disconnected from MQTT server";
 };
 
+let lastHash = window.location.hash;
+
 const checkHash = () => {
   const hash = window.location.hash;
   if (hash.startsWith("#pair=")) {
     config.setMode("rc");
+    if (lastHash !== hash) {
+      lastHash = hash;
+      window.location.reload();
+    }
   } else if (hash.startsWith("#reset")) {
     config.clearConfig();
     window.location.hash = "";
   } else {
     config.setMode("projector");
+    if (lastHash !== hash) {
+      lastHash = hash;
+      window.location.reload();
+    }
   }
 };
 

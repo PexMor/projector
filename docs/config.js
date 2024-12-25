@@ -26,19 +26,28 @@ const Config = () => {
     knownUUIDs: [],
   };
   let config = defConfig;
+  const tmpScreenId = window.location.hash.substring(1) || "";
+  if (!tmpScreenId.includes("=")) {
+    // force screenId
+    var forceScreenId = tmpScreenId;
+    console.log("forceScreenId:", forceScreenId);
+  }
+  const screenId = forceScreenId || "def";
+  console.log("screenId:", screenId);
+  const confId = `config-${screenId}`;
   const clearConfig = () => {
-    window.localStorage.setItem("config", JSON.stringify(defConfig));
-    config = JSON.parse(window.localStorage.getItem("config"));
+    window.localStorage.setItem(confId, JSON.stringify(defConfig));
+    config = JSON.parse(window.localStorage.getItem(confId));
   };
   const loadConfig = () => {
-    let x_config = window.localStorage.getItem("config");
+    let x_config = window.localStorage.getItem(confId);
     if (typeof x_config === "undefined" || x_config === null) {
       clearConfig();
     }
-    config = JSON.parse(window.localStorage.getItem("config"));
+    config = JSON.parse(window.localStorage.getItem(confId));
   };
   const saveConfig = () => {
-    window.localStorage.setItem("config", JSON.stringify(config));
+    window.localStorage.setItem(confId, JSON.stringify(config));
   };
   const fixAndSaveCfg = (item) => {
     if (config[item] === null || config[item] === undefined) {
@@ -133,6 +142,13 @@ const Config = () => {
     remKnownUUID: (uuid) => {
       config.knownUUIDs = config.knownUUIDs.filter((item) => item !== uuid);
       saveConfig();
+    },
+    getScreenId: () => {
+      return screenId;
+    },
+    setScreenId: (screenId) => {
+      window.location.hash = `#${screenId}`;
+      window.location.reload();
     },
   };
   iface.loadConfig();
