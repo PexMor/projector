@@ -17,6 +17,7 @@ const butCommands = [
   { showTable: { label: "Show Table", meta: { id: "id1" } } },
   { hideLogo: { label: "Hide Logo" } },
   { hideTable: { label: "Hide Table" } },
+  { hideVideo: { label: "Hide Video" } },
 ];
 const commands = Object.keys(butCommands);
 let cmdState = 0;
@@ -162,6 +163,9 @@ export const execCommand = (cmd) => {
   } else if (cmd.op && cmd.op === "hideTable") {
     const elMain = document.getElementById("main");
     elMain.innerHTML = "";
+  } else if (cmd.op && cmd.op === "hideVideo") {
+    const elVid = document.getElementById("pro-vid");
+    elVid.innerHTML = "";
   } else {
     console.log("Unknown command:", cmd);
   }
