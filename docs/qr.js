@@ -9,6 +9,7 @@ export const makeQRSVG = (data) => {
   // remove comment line from generated svg, ugly hack
   svgLines = svgLines.slice(1);
   const svgPatched = svgLines.join("\n");
+  console.log(svgPatched);
   return svgPatched;
 };
 window.makeQRSVG = makeQRSVG;
@@ -23,22 +24,32 @@ const copyToClipboard = (event) => {
 export const showQr = () => {
   const url = new URL(window.location.href);
   let op = "#pair=" + config.getUUID();
-  console.log(op);
+  console.log("showQr:op=" + op);
   url.hash = op;
-  const qr = makeQRSVG(url.href);
+  let qr = makeQRSVG(url.href);
   const elMain = document.getElementById("main");
   elMain.innerHTML = "";
+
   const elContainer = document.createElement("div");
   elContainer.setAttribute("id", "container");
+
+  const elContainerSub = document.createElement("div");
+  elContainerSub.setAttribute("id", "containerSub");
+
+  // inner divs for qr and url
   const qrEl = document.createElement("div");
   qrEl.setAttribute("id", "qr");
   qrEl.innerHTML = qr;
-  elContainer.appendChild(qrEl);
+  elContainerSub.appendChild(qrEl);
   const urlEl = document.createElement("div");
   urlEl.setAttribute("id", "url");
   urlEl.innerHTML = url.href;
   urlEl.addEventListener("click", copyToClipboard);
-  elContainer.appendChild(urlEl);
+  elContainerSub.appendChild(urlEl);
+  // -- end inner divs
+
+  elContainer.appendChild(elContainerSub);
+
   elMain.appendChild(elContainer);
 };
 

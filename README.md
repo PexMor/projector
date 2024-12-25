@@ -19,3 +19,13 @@ Inspired by:
 - Bonjour aka mDNS
 - WebRTC
 - Websockets
+
+## Development
+
+Start local web server (in docs folder):
+
+```bash
+python -mhttp.server 8088
+```
+
+and the open <http://localhost:8088>
