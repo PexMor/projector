@@ -1,348 +1,134 @@
-import QrCode from "https://danielgjackson.github.io/qrcodejs/qrcode.mjs";
+import { config } from "./config.js";
+import {
+  msgSrvMqtt,
+  mqtt_app_prefix_by_uuid,
+  mqtt_app_prefix_group,
+} from "./mqtt.js";
+import { showQr, showInit } from "./qr.js";
+import { showCC, setSendMsg, execCommand } from "./commands.js";
+import { showNotification } from "./notif.js";
 
-let mode = "projector";
-const zero_uuid = "00000000-0000-0000-0000-000000000000";
-let ls_uuid = "no-storage";
-let talkTo = zero_uuid;
-let client;
-const butCommands = [
-  { showVideo: { label: "Show Video #1", meta: { id: "id1" } } },
-  { showVideo: { label: "Show Video #2", meta: { id: "id2" } } },
-  { showLogo: { label: "Show Logo #1", meta: { id: "id1", timeout: "5s" } } },
-  { showLogo: { label: "Show Logo #2", meta: { id: "id2", timeout: "5s" } } },
-  { showLogo: { label: "Show Logo #3", meta: { id: "id3", timeout: "5s" } } },
-  { showLogo: { label: "Show Logo #3", meta: { id: "id3" } } },
-  { showTable: { label: "Show Table", meta: { id: "id1", timeout: "5s" } } },
-  { showTable: { label: "Show Table", meta: { id: "id1" } } },
-  { hideLogo: { label: "Hide Logo" } },
-  { hideTable: { label: "Hide Table" } },
-];
-const commands = Object.keys(butCommands);
+let mqttIface = null;
 let cmdState = 0;
 
-function uuidv4() {
-  return ([1e7] + -1e3 + -4e3 + -8e3 + -1e11).replace(/[018]/g, (c) =>
-    (
-      c ^
-      (crypto.getRandomValues(new Uint8Array(1))[0] & (15 >> (c / 4)))
-    ).toString(16)
-  );
-}
-
-const refreshStorage = () => {
-  let x_ls_uuid = window.localStorage.getItem("uuid");
-  console.log(x_ls_uuid);
-  if (typeof x_ls_uuid === "undefined" || x_ls_uuid === null) {
-    ls_uuid = uuidv4();
-    window.localStorage.setItem("uuid", ls_uuid);
+const mySendMsg = (value) => {
+  if (mqttIface !== null && mqttIface !== undefined) {
+    const topics = config.getTopics();
+    for (const topic of topics) {
+      console.log("sendMsg:", topic, value);
+      mqttIface.send(topic, JSON.stringify({ val: value }));
+    }
   } else {
-    ls_uuid = x_ls_uuid;
+    console.error("mqttIface not defined");
   }
 };
-refreshStorage();
+setSendMsg(mySendMsg);
 
-const getUUID = function () {
-  return ls_uuid;
-};
-window.getMyUUID = getUUID;
-
-const getTopic = (theUUID) => {
-  if (theUUID === undefined) {
-    theUUID = getUUID();
-  }
-  return "projector-world/" + theUUID;
-};
-
-const makeQRSVG = (data) => {
-  const matrix = QrCode.generate(data);
-  const svg = QrCode.render("svg", matrix);
-  let svgLines = svg.split(/\r?\n/);
-  // remove comment line from generated svg, ugly hack
-  svgLines = svgLines.slice(1);
-  const svgPatched = svgLines.join("\n");
-  return svgPatched;
-};
-window.makeQRSVG = makeQRSVG;
-const msgSrvMqtt = (
-  host,
-  port,
-  clientId,
-  subscribe_topic,
-  onMessage,
-  onConnect
-) => {
-  client = new Paho.MQTT.Client(host, Number(port), clientId);
-  client.onConnectionLost = onConnectionLost;
-  client.onMessageArrived = onMessageArrived;
-  client.connect({ useSSL: true, onSuccess: onConnectLocal });
-  function onConnectLocal() {
-    console.log("onConnect");
-    console.log("Subscribe topic:", subscribe_topic);
-    client.subscribe(subscribe_topic);
-    onConnect();
-  }
-  function onConnectionLost(responseObject) {
-    if (responseObject.errorCode !== 0) {
-      console.log("onConnectionLost:" + responseObject.errorMessage);
-    }
-  }
-  function onMessageArrived(message) {
-    console.log("onMessageArrived:" + message.payloadString);
-    try {
-      const payload = JSON.parse(message.payloadString);
-      onMessage(payload);
-    } catch (error) {
-      console.error(error);
-    }
-  }
-  function send(dest, value) {
-    message = new Paho.MQTT.Message(value);
-    message.destinationName = dest;
-    client.send(message);
-    return false;
-  }
-  return send;
-};
-
-const showQr = () => {
-  const url = new URL(window.location.href);
-  let op = "#pair=" + getMyUUID();
-  console.log(op);
-  url.hash = op;
-  const qr = makeQRSVG(url.href);
-  const elMain = document.getElementById("main");
-  elMain.innerHTML = "";
-  const elContainer = document.createElement("div");
-  elContainer.setAttribute("id", "container");
-  const qrEl = document.createElement("div");
-  qrEl.setAttribute("id", "qr");
-  qrEl.innerHTML = qr;
-  elContainer.appendChild(qrEl);
-  const urlEl = document.createElement("div");
-  urlEl.setAttribute("id", "url");
-  urlEl.innerHTML = url.href;
-  elContainer.appendChild(urlEl);
-  elMain.appendChild(elContainer);
-};
-
-const sendMsg = (value) => {
-  client.send(getTopic(talkTo), JSON.stringify({ val: value }));
-};
-
-const video = {
-  id1: `<video autoplay muted loop id="background-video">
-        <source src="https://assets.mixkit.co/videos/677/677-720.mp4" type="video/mp4">Your browser does not support the video tag.</video>`,
-  id2: `<video autoplay muted loop id="background-video">
-    <source src="https://assets.mixkit.co/videos/4643/4643-720.mp4" type="video/mp4">Your browser does not support the video tag.</video>`,
-};
-const logo = {
-  id1: `<img src="imgs/airline-passenger-care-svgrepo-com.svg" class="logo"/>`,
-  id2: `<img src="imgs/dancer-svgrepo-com.svg" class="logo"/>`,
-  id3: `<img src="imgs/winner-cup-illustration-svgrepo-com.svg" class="logo"/>`,
-};
-const table = {
-  id1: `<table>
-    <tr>
-        <th>Firstname</th>
-        <th>Lastname</th>
-        <th>Age</th>
-    </tr>
-    <tr>
-        <td>Jill</td>
-        <td>Smith</td>
-        <td>50</td>
-    </tr>
-    </table>`,
-};
-
-const timeStrToMs = (timeStr) => {
-  let timeMs = 0;
-  // convert timestring like 1h2m3s to milliseconds
-  const re = /(\d+)(h|m|s)/g;
-  let match;
-  while ((match = re.exec(timeStr)) !== null) {
-    let unit = match[2];
-    let value = parseInt(match[1]);
-    if (unit === "h") {
-      timeMs += value * 60 * 60 * 1000;
-    } else if (unit === "m") {
-      timeMs += value * 60 * 1000;
-    } else if (unit === "s") {
-      timeMs += value * 1000;
-    }
-  }
-  return timeMs;
-};
-
-const showCC = () => {
-  const elStatus = document.getElementById("status");
-  elStatus.setAttribute("class", "paired");
-  const elMain = document.getElementById("main");
-  elMain.innerHTML = "";
-  const elContainer = document.createElement("div");
-  elContainer.setAttribute("id", "container");
-  const elInput = document.createElement("input");
-  elInput.setAttribute("id", "input");
-  elInput.setAttribute("type", "text");
-  elInput.setAttribute("placeholder", "Enter your message here");
-  elContainer.appendChild(elInput);
-  const elButton = document.createElement("button");
-  elButton.setAttribute("id", "send");
-  elButton.innerHTML = "Send";
-  elButton.addEventListener("click", () => {
-    const value = document.getElementById("input").value;
-    sendMsg(value);
-  });
-  elContainer.appendChild(elButton);
-  elContainer.appendChild(document.createElement("br"));
-  butCommands.forEach((command) => {
-    const elButton = document.createElement("button");
-    let cmdId = Object.keys(command)[0];
-    let cmdVal = command[cmdId];
-    if (
-      typeof cmdVal.meta !== "undefined" &&
-      typeof cmdVal.meta.timeout !== "undefined"
-    ) {
-      elButton.innerHTML = `${cmdVal.label} (timeout=${cmdVal.meta.timeout})`;
-    } else {
-      elButton.innerHTML = cmdVal.label;
-    }
-    elButton.addEventListener("click", () => {
-      sendMsg({ op: cmdId, meta: { ...cmdVal.meta } });
-    });
-    elContainer.appendChild(elButton);
-    elContainer.appendChild(document.createElement("br"));
-  });
-  elMain.appendChild(elContainer);
-};
-
-const execCommand = (cmd) => {
-  console.log("cmd:", cmd);
-  if (cmd.op && cmd.op === "showVideo") {
-    const elVid = document.getElementById("pro-vid");
-    console.log("cmd.meta:", cmd.meta, cmd.meta.id, Object.keys(video));
-    if (typeof cmd.meta !== "undefined" && typeof cmd.meta.id !== "undefined") {
-      console.log(
-        "cmd.meta.id:",
-        cmd.meta.id,
-        cmd.meta.id in Object.keys(video)
-      );
-      if (Object.keys(video).includes(cmd.meta.id)) {
-        elVid.innerHTML = video[cmd.meta.id];
-      } else {
-        console.error("Unknown video meta:", cmd.meta);
-      }
-    } else {
-      console.error("Unknown video meta:", cmd.meta);
-    }
-  } else if (cmd.op && cmd.op === "showLogo") {
-    const elLogo = document.getElementById("pro-logo");
-    console.log("cmd.meta:", cmd.meta, cmd.meta.id, Object.keys(logo));
-    if (typeof cmd.meta !== "undefined" && typeof cmd.meta.id !== "undefined") {
-      console.log(
-        "cmd.meta.id:",
-        cmd.meta.id,
-        cmd.meta.id in Object.keys(logo)
-      );
-      if (Object.keys(logo).includes(cmd.meta.id)) {
-        elLogo.innerHTML = logo[cmd.meta.id];
-        if (cmd.meta.timeout) {
-          setTimeout(() => {
-            elLogo.innerHTML = "";
-          }, timeStrToMs(cmd.meta.timeout));
+const onMessage = (topic, msg) => {
+  // check from where did the message arrived
+  console.log(topic, msg);
+  if (topic.startsWith(mqtt_app_prefix_by_uuid)) {
+    // we accept the config message here only
+    // {"op":"pair-reponse","rc_uuid":"e4bacf88-8e96-4d5a-ae15-b958d51686b3","secCode":"1234"}
+    if (config.getMode() === "projector") {
+      if (
+        config.getMode() === "projector" &&
+        msg !== undefined &&
+        msg.op &&
+        msg.op === "pair-reponse" &&
+        msg.secCode !== undefined &&
+        msg.rc_uuid !== undefined
+      ) {
+        if (config.getSecCode() !== msg.secCode) {
+          showNotification("Invalid pairing response", "#fee");
+          return;
         }
+        showNotification("Valid pairing response", "#efe");
+        const allTopics = config.addKnownUUID(msg.rc_uuid);
+        console.log("allTopics:", allTopics);
+        config.setTopics(allTopics);
+        const elMain = document.getElementById("main");
+        elMain.innerHTML = "...commands...";
+        cmdState = 0;
+        const elStatus = document.getElementById("status");
+        elStatus.setAttribute("class", "paired");
+        // Subscribe to the remote projector
+        mqttIface.subscribe(`${mqtt_app_prefix_group}/${msg.rc_uuid}`);
       } else {
-        console.error("Unknown logo meta:", cmd.meta);
+        showNotification("Invalid message received", "#fee");
       }
     } else {
-      console.error("Unknown logo meta:", cmd.meta);
+      console.error("Invalid mode");
     }
-  } else if (cmd.op && cmd.op === "showTable") {
-    if (typeof cmd.meta !== "undefined" && typeof cmd.meta.id !== "undefined") {
-      if (Object.keys(table).includes(cmd.meta.id)) {
+  } else if (topic.startsWith(mqtt_app_prefix_group)) {
+    if (config.getMode() === "projector") {
+      if (cmdState === 0) {
+        cmdState = 1;
         const elMain = document.getElementById("main");
         elMain.innerHTML = "";
-        const elContainer = document.createElement("div");
-        elContainer.setAttribute("id", "container");
-        const elProTable = document.createElement("div");
-        elProTable.setAttribute("id", "pro-table");
-        elProTable.innerHTML = table[cmd.meta.id];
-        elContainer.appendChild(elProTable);
-        elMain.appendChild(elContainer);
-        if (cmd.meta.timeout) {
-          setTimeout(() => {
-            elMain.innerHTML = "";
-          }, timeStrToMs(cmd.meta.timeout));
-        }
-      } else {
-        console.error("Unknown logo meta:", cmd.meta);
       }
+      execCommand(msg.val);
     } else {
-      console.error("Unknown logo meta:", cmd.meta);
+      console.error("Invalid mode");
     }
-  } else if (cmd.op && cmd.op === "hideLogo") {
-    const elLogo = document.getElementById("pro-logo");
-    elLogo.innerHTML = "";
-  } else if (cmd.op && cmd.op === "hideTable") {
-    const elMain = document.getElementById("main");
-    elMain.innerHTML = "";
   } else {
-    console.log("Unknown command:", cmd);
-  }
-};
-
-const onMessage = (msg) => {
-  console.log(msg);
-  if (mode === "projector") {
-    // document.getElementById("msgs").innerHTML = JSON.stringify(msg);
-    const elStatus = document.getElementById("status");
-    elStatus.setAttribute("class", "paired");
-    let elMain = document.getElementById("main");
-    if (cmdState === 0) {
-      elMain.innerHTML = "Connected, waiting for commands";
-      cmdState = 1;
-    } else if (cmdState === 1) {
-      elMain.innerHTML = "";
-      cmdState = 2;
-    }
-    execCommand(msg.val);
-  } else {
-    console.log("msg:", msg);
+    console.error("Unknown topic prefix:", topic);
   }
 };
 
 const onConnect = () => {
   const elStatus = document.getElementById("status");
   elStatus.setAttribute("class", "connected");
-  let elMain = document.getElementById("main");
-  elMain.innerHTML = "Waiting for MQTT server connection";
-  if (mode === "projector") {
+  if (config.getMode() === "projector") {
     showQr();
+    const topics = config.getTopics();
+    topics.forEach((topic, ii) => {
+      console.log(`topic#${ii}: ${topic}`);
+    });
   } else {
+    const hash = window.location.hash;
+    const remoteUuid = hash.substring(6);
+    config.setTopics([remoteUuid]);
+    mqttIface.confRemoteProjector(remoteUuid);
+    console.log("remoteUuid:", remoteUuid);
     showCC();
-    sendMsg({ op: "connected" });
+    // sendMsg({ op: "connected" });
   }
+};
+
+const onDisconnect = () => {
+  const elStatus = document.getElementById("status");
+  elStatus.setAttribute("class", "disconnected");
+  let elMain = document.getElementById("main");
+  elMain.innerHTML = "Disconnected from MQTT server";
 };
 
 const checkHash = () => {
   const hash = window.location.hash;
   if (hash.startsWith("#pair=")) {
-    mode = "cc";
-    talkTo = hash.substring(6);
-    console.log("talkTo:", talkTo);
+    config.setMode("rc");
+  } else if (hash.startsWith("#reset")) {
+    config.clearConfig();
+    window.location.hash = "";
+  } else {
+    config.setMode("projector");
   }
-  console.log(mode);
+};
+
+const onLoad = () => {
+  showInit();
+  checkHash();
+  const mqtt = config.getMqtt();
+  mqttIface = msgSrvMqtt(
+    mqtt.host,
+    mqtt.port,
+    "projector" + Math.random().toString(16).substring(2, 8),
+    config.getOwnTopic(),
+    onMessage,
+    onConnect,
+    onDisconnect
+  );
 };
 
 window.addEventListener("hashchange", checkHash);
-window.addEventListener("load", () => {
-  checkHash();
-  msgSrvMqtt(
-    "broker.emqx.io",
-    8084,
-    "projector" + Math.random().toString(16).substring(2, 8),
-    getTopic(),
-    onMessage,
-    onConnect
-  );
-});
+window.addEventListener("load", onLoad);

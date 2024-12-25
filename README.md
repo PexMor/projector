@@ -1,39 +1,21 @@
-# Websocket messaging
+# The Projector
 
 **TL;DR** Open <https://pexmor.github.io/projector/> and scan the QR with your phone.
 
-> Note:The **github.io** current version does not pair the projector with any backend. But that is an optional feature, which can be done with little to no effort.
+The code is located in [docs](docs) folder here in this repo.
 
-## static html serving
+This project was create in order to make a proof of concept that can demonstrate modern web technologies.
 
-```bash
-python -mhttp.server -d docs 8088
-```
+The keywords or technologies include, but are not limited to:
 
-```bash
-php -S 8088
-```
+- MQTT over websocket
+- MQTT server
+- QR 2-D barcodes codes
 
-## With Mosquitto is a MQTT friend
+Inspired by:
 
-```bash
-# you might add '-d' for demonizing it
-mosquitto -c mosquitto.conf
-```
-
-```bash
-mosquitto_pub -h localhost -t test -m abc
-```
-
-```bash
-#
-mosquitto_pub -h localhost -t to-projector -m '{"txt":"Pokus dnes '"`date`"'"}'
-#
-mosquitto_pub -h localhost -t to-projector -m '{"txt":"<span style=\"font-size:200%\">😀😆🥹😅😂🤣</span>"}'
-```
-
-## With PHP Websocket server
-
-```bash
-websocat ws://127.0.0.1:1884/chat
-```
+- Digital Living Network Alliance (DLNA)
+- UPnP aka mHTTP
+- Bonjour aka mDNS
+- WebRTC
+- Websockets

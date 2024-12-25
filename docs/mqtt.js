@@ -1,57 +1,105 @@
-const msgSrvMqtt = (
+import { config } from "./config.js";
+import { showNotification } from "./notif.js";
+
+let client;
+export const mqtt_app_prefix = "pexmor/projector";
+export const mqtt_app_prefix_group = `${mqtt_app_prefix}/group-topics`;
+export const mqtt_app_prefix_by_uuid = `${mqtt_app_prefix}/by-uuid`;
+
+export const msgSrvMqtt = (
   host,
   port,
   clientId,
-  subscribe_topic,
+  subscribe_own_topic,
   onMessage,
-  onConnect
+  onConnect,
+  onDisconnect
 ) => {
-  // Create a client instance
-  // const mqtt_host = "localhost"; //location.hostname
-  // const mqtt_port = 1884; //location.port
-  // const clientId = "projector" + Math.random().toString(16).substring(2, 8);
-  client = new Paho.MQTT.Client(host, Number(port), clientId);
-
-  // set callback handlers
-  client.onConnectionLost = onConnectionLost;
-  client.onMessageArrived = onMessageArrived;
-
-  // connect the client
-  client.connect({ onSuccess: onConnectLocal });
-
-  // called when the client connects
-  function onConnectLocal() {
-    // Once a connection has been made, make a subscription and send a message.
+  const onConnectLocal = () => {
     console.log("onConnect");
-    client.subscribe(subscribe_topic);
-    // message = new Paho.MQTT.Message(JSON.stringify({ message: "Hello" }));
-    // message.destinationName = "from-projector";
-    // client.send(message);
+    console.log("Subscribe own topic:", subscribe_own_topic);
+    client.subscribe(subscribe_own_topic);
     onConnect();
-  }
-
-  // called when the client loses its connection
-  function onConnectionLost(responseObject) {
+  };
+  const onConnectionLost = (reconnect) => (responseObject) => {
     if (responseObject.errorCode !== 0) {
       console.log("onConnectionLost:" + responseObject.errorMessage);
+      onDisconnect();
+      setTimeout(reconnect, 2000);
     }
-  }
-
-  // called when a message arrives
-  function onMessageArrived(message) {
-    console.log("onMessageArrived:" + message.payloadString);
+  };
+  const onMessageArrived = (message) => {
+    console.log(
+      "onMessageArrived:",
+      message.payloadString,
+      message.destinationName
+    );
     try {
       const payload = JSON.parse(message.payloadString);
-      onMessage(payload);
+      onMessage(message.destinationName, payload);
     } catch (error) {
       console.error(error);
     }
-  }
-  function send(dest, value) {
-    message = new Paho.MQTT.Message(JSON.stringify({ txt: value }));
-    message.destinationName = dest;
-    client.send(message);
-    return false;
-  }
-  return send;
+  };
+  const iface = {
+    subscribe: (topic) => {
+      console.log("subscribe:", topic);
+      client.subscribe(topic);
+    },
+    unsubscribe: (topic) => {
+      console.log("unsubscribe:", topic);
+      client.unsubscribe(topic);
+    },
+    disconnect: () => {
+      client.disconnect();
+    },
+    send: (dest, value) => {
+      let message = new Paho.MQTT.Message(value);
+      message.destinationName = dest;
+      if (client && client.isConnected()) {
+        client.send(message);
+      } else {
+        console.error("Client not connected");
+      }
+      return false;
+    },
+    confRemoteProjector: (remoteUUID) => {
+      console.log("confRemoteProjector:", remoteUUID);
+      const remoteOwnTopic = `${mqtt_app_prefix}/by-uuid/${remoteUUID}`;
+      const remoteSecCode = "1234"; // Math.random().toString(16).substring(2, 8);
+      let message = new Paho.MQTT.Message(
+        JSON.stringify({
+          op: "pair-reponse",
+          rc_uuid: config.getUUID(),
+          secCode: remoteSecCode,
+        })
+      );
+      message.destinationName = remoteOwnTopic;
+      if (client && client.isConnected()) {
+        console.log(
+          "Sending message to:",
+          remoteOwnTopic,
+          message.payloadString
+        );
+        client.send(message);
+      } else {
+        console.error("Client not connected");
+        showNotification("MQTT not connected", "#fee");
+      }
+      config.setTopics([config.getUUID()]);
+      // might not be needed, the other party should subscribe to the group topic
+      // const groupTopic = `${mqtt_app_prefix_group}/${config.getUUID()}`;
+      // client.subscribe(groupTopic);
+    },
+  };
+  // client is a module level variable
+  const connect = () => {
+    client = new Paho.MQTT.Client(host, Number(port), clientId);
+    // set callback handlers and provide reconnect function
+    client.onConnectionLost = onConnectionLost(connect);
+    client.onMessageArrived = onMessageArrived;
+    client.connect({ useSSL: true, onSuccess: onConnectLocal });
+  };
+  connect();
+  return iface;
 };
