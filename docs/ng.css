@@ -58,6 +58,22 @@
   left: 0;
   overflow: hidden;
 }
+#pro-grid {
+  display: grid;
+  grid-template-columns: 1fr 5fr 2fr;
+  border: 1px dotted red;
+  vertical-align: middle;
+  padding: 3em;
+  height: 100%;
+}
+.cell {
+  border: 1px solid black;
+  padding: 1em;
+  text-align: center;
+  background-color: rgba(200, 200, 200, 0.3);
+  padding: 1em;
+  margin: 1em;
+}
 .connected {
   background-color: orange;
   opacity: 0.5;

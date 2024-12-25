@@ -15,10 +15,22 @@ const butCommands = [
   { showLogo: { label: "Show Logo #3", meta: { id: "id3" } } },
   { showTable: { label: "Show Table", meta: { id: "id1", timeout: "5s" } } },
   { showTable: { label: "Show Table", meta: { id: "id1" } } },
+  { showGrid: { label: "Show Grid" } },
   { hideLogo: { label: "Hide Logo" } },
   { hideTable: { label: "Hide Table" } },
   { hideVideo: { label: "Hide Video" } },
+  { hideGrid: { label: "Hide Grid" } },
 ];
+export const cmdToColor = {
+  showVideo: "#fcc",
+  showLogo: "#cfc",
+  showTable: "#ccf",
+  showGrid: "#ffc",
+  hideLogo: "#fcf",
+  hideTable: "#cff",
+  hideVideo: "#ffc",
+  hideGrid: "#cff",
+};
 const commands = Object.keys(butCommands);
 let cmdState = 0;
 
@@ -58,6 +70,8 @@ export const showCC = () => {
   butCommands.forEach((command) => {
     const elButton = document.createElement("button");
     elButton.setAttribute("class", "btn");
+    elButton.style.backgroundColor =
+      cmdToColor[Object.keys(command)[0]] || "#fff";
     let cmdId = Object.keys(command)[0];
     let cmdVal = command[cmdId];
     if (
@@ -157,10 +171,25 @@ export const execCommand = (cmd) => {
     } else {
       console.error("Unknown logo meta:", cmd.meta);
     }
+  } else if (cmd.op && cmd.op === "showGrid") {
+    const elMain = document.getElementById("main");
+    elMain.innerHTML = "";
+    const elProGrid = document.createElement("div");
+    elProGrid.setAttribute("id", "pro-grid");
+    for (let row = 0; row < 5; row++) {
+      for (let col = 0; col < 3; col++) {
+        const elCell = document.createElement("div");
+        elCell.setAttribute("class", "cell");
+        elCell.innerHTML = `${row},${col}`;
+        elProGrid.appendChild(elCell);
+      }
+    }
+    // elProGrid.innerHTML = "Grid goes here";
+    elMain.appendChild(elProGrid);
   } else if (cmd.op && cmd.op === "hideLogo") {
     const elLogo = document.getElementById("pro-logo");
     elLogo.innerHTML = "";
-  } else if (cmd.op && cmd.op === "hideTable") {
+  } else if (cmd.op && (cmd.op === "hideTable" || cmd.op === "hideGrid")) {
     const elMain = document.getElementById("main");
     elMain.innerHTML = "";
   } else if (cmd.op && cmd.op === "hideVideo") {
