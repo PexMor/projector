@@ -58,6 +58,7 @@ export const showInit = () => {
   elMain.innerHTML = "";
   const elContainer = document.createElement("div");
   elContainer.setAttribute("id", "container");
-  elContainer.innerHTML = "Waiting for MQTT server connection";
+  elContainer.innerHTML =
+    "Waiting for MQTT server connection<br/>Consider setting mqttCfgUrl in URL like <b>#mqttCfgUrl=config.json</b>";
   elMain.appendChild(elContainer);
 };

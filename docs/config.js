@@ -11,20 +11,32 @@ const uuidv4 = () => {
 
 const zero_uuid = "00000000-0000-0000-0000-000000000000";
 
+export const defBroker = {
+  host: "broker.emqx.io",
+  port: 8084,
+  useSSL: true,
+  user: null,
+  pass: null,
+};
+
+const defConfig = {
+  mode: "projector",
+  mqtt: {
+    host: defBroker.host,
+    port: defBroker.port,
+    useSSL: defBroker.useSSL,
+    user: defBroker.user,
+    pass: defBroker.pass,
+  },
+  state: "pairing",
+  uuid: uuidv4(),
+  created: new Date().toISOString(),
+  secCode: "1234",
+  topics: ["projector-world"],
+  knownUUIDs: [],
+};
+
 const Config = () => {
-  const defConfig = {
-    mode: "projector",
-    mqtt: {
-      host: "broker.emqx.io",
-      port: 8084,
-    },
-    state: "pairing",
-    uuid: uuidv4(),
-    created: new Date().toISOString(),
-    secCode: "1234",
-    topics: ["projector-world"],
-    knownUUIDs: [],
-  };
   let config = defConfig;
   const tmpScreenId = window.location.hash.substring(1) || "";
   if (!tmpScreenId.includes("=")) {
@@ -36,14 +48,17 @@ const Config = () => {
   console.log("screenId:", screenId);
   const confId = `config-${screenId}`;
   const clearConfig = () => {
+    console.log("clearConfig: confId", confId);
     window.localStorage.setItem(confId, JSON.stringify(defConfig));
-    config = JSON.parse(window.localStorage.getItem(confId));
+    config = defConfig;
+    console.log("config:", JSON.stringify(config));
   };
   const loadConfig = () => {
     let x_config = window.localStorage.getItem(confId);
     if (typeof x_config === "undefined" || x_config === null) {
       clearConfig();
     }
+    console.log("loadConfig: confId = ", confId);
     config = JSON.parse(window.localStorage.getItem(confId));
   };
   const saveConfig = () => {
@@ -72,9 +87,18 @@ const Config = () => {
     getMqtt: () => {
       return config.mqtt;
     },
-    setMqtt: (host, port) => {
+    setMqtt: (host, port, useSSL) => {
       config.mqtt.host = host;
       config.mqtt.port = port;
+      config.mqtt.useSSL = useSSL;
+      fixAndSaveCfg("mqtt");
+    },
+    setMqttAll: (host, port, useSSL, user, pass) => {
+      config.mqtt.host = host;
+      config.mqtt.port = port;
+      config.mqtt.useSSL = useSSL;
+      config.mqtt.user = user;
+      config.mqtt.pass = pass;
       fixAndSaveCfg("mqtt");
     },
     getState: () => {
@@ -151,8 +175,8 @@ const Config = () => {
       window.location.reload();
     },
   };
-  iface.loadConfig();
-  console.log("config:", JSON.stringify(config));
+  loadConfig();
+  // console.log("config-l:", JSON.stringify(config));
   return iface;
 };
 

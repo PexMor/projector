@@ -1,0 +1,4 @@
+# Ignore the override configuration file
+# as it should be always local
+# as reference use the config_example.json
+config.json

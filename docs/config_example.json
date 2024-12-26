@@ -1,0 +1,7 @@
+{
+  "host": "broker.emqx.io",
+  "port": 8084,
+  "useSSL": true,
+  "user": null,
+  "pass": null
+}

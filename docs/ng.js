@@ -104,7 +104,8 @@ const onDisconnect = () => {
 
 let lastHash = window.location.hash;
 
-const checkHash = () => {
+const checkHash = (win, e) => {
+  if (e) e.preventDefault();
   const hash = window.location.hash;
   if (hash.startsWith("#pair=")) {
     config.setMode("rc");
@@ -115,6 +116,28 @@ const checkHash = () => {
   } else if (hash.startsWith("#reset")) {
     config.clearConfig();
     window.location.hash = "";
+    window.location.reload();
+  } else if (hash.startsWith("#mqttCfgUrl=")) {
+    // ie. #mqttCfgUrl=config.json
+    const url = new URL(hash.substring(12), window.location.href).href;
+    console.log("#mqttCfgUrl:", url);
+    fetch(url)
+      .then((response) => response.json())
+      .then((data) => {
+        console.log("config.json:", data);
+        config.setMqttAll(
+          data.host,
+          data.port,
+          data.useSSL,
+          data.user,
+          data.pass
+        );
+      })
+      .catch(console.error)
+      .finally(() => {
+        window.location.hash = "";
+        window.location.reload();
+      });
   } else {
     config.setMode("projector");
     if (lastHash !== hash) {
@@ -131,6 +154,7 @@ const onLoad = () => {
   mqttIface = msgSrvMqtt(
     mqtt.host,
     mqtt.port,
+    mqtt.useSSL,
     "projector" + Math.random().toString(16).substring(2, 8),
     config.getOwnTopic(),
     onMessage,

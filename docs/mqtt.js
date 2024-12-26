@@ -9,6 +9,7 @@ export const mqtt_app_prefix_by_uuid = `${mqtt_app_prefix}/by-uuid`;
 export const msgSrvMqtt = (
   host,
   port,
+  useSSL,
   clientId,
   subscribe_own_topic,
   onMessage,
@@ -98,7 +99,7 @@ export const msgSrvMqtt = (
     // set callback handlers and provide reconnect function
     client.onConnectionLost = onConnectionLost(connect);
     client.onMessageArrived = onMessageArrived;
-    client.connect({ useSSL: true, onSuccess: onConnectLocal });
+    client.connect({ useSSL, onSuccess: onConnectLocal });
   };
   connect();
   return iface;
