@@ -84,6 +84,7 @@ const onConnect = () => {
     topics.forEach((topic, ii) => {
       console.log(`topic#${ii}: ${topic}`);
     });
+    console.log("Topics.length", topics.length);
     if (topics.length === 0) {
       showQr();
     } else {
