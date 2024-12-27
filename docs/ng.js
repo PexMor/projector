@@ -87,7 +87,25 @@ const onConnect = () => {
     });
   } else {
     const hash = window.location.hash;
-    const remoteUuid = hash.substring(6);
+    let remoteUuid = "";
+    if (hash.startsWith("#pair://")) {
+      let alaUrl = hash.substring(1);
+      let url = new URL(alaUrl);
+      const mqtt = config.getMqtt();
+      if (url.host !== mqtt.host || url.port !== mqtt.port || !mqtt.useSSL) {
+        // reconfigure mqtt
+        config.setMqtt(url.host, url.port, true);
+        console.log("Reconfiguring mqtt:", url.host, url.port, "SSL");
+        window.location.reload();
+        return;
+      } else {
+        console.log("We have correct mqtt settings");
+      }
+      remoteUuid = url.pathname.substring(1);
+      config.setTopics([remoteUuid]);
+    } else if (hash.startsWith("#pair=")) {
+      remoteUuid = hash.substring(6);
+    }
     config.setTopics([remoteUuid]);
     mqttIface.confRemoteProjector(remoteUuid);
     console.log("remoteUuid:", remoteUuid);
@@ -108,6 +126,12 @@ const checkHash = (win, e) => {
   if (e) e.preventDefault();
   const hash = window.location.hash;
   if (hash.startsWith("#pair=")) {
+    config.setMode("rc");
+    if (lastHash !== hash) {
+      lastHash = hash;
+      window.location.reload();
+    }
+  } else if (hash.startsWith("#pair://")) {
     config.setMode("rc");
     if (lastHash !== hash) {
       lastHash = hash;
@@ -147,9 +171,134 @@ const checkHash = (win, e) => {
   }
 };
 
+const showDebug = () => {
+  if (elDebug.style.display === "none" || elDebug.style.display === "") {
+    elDebug.style.display = "block";
+  } else {
+    elDebug.style.display = "none";
+  }
+  elDebug.innerHTML = "";
+  // items to show:
+  // uuid
+  // mqtt.host mqtt.port mqtt.useSSL
+  // connection state
+  // mode
+  // connect count
+  // disconnect count
+  // message count
+  // screens ~ localStorage.keys()
+  // localStorage.clear()
+  // reload()
+  // reset()
+  let elDiv = document.createElement("div");
+  elDiv.innerHTML = "uuid: " + config.getUUID();
+  elDebug.appendChild(elDiv);
+  elDiv = document.createElement("div");
+  const mqtt = config.getMqtt();
+  elDiv.innerHTML = `mqtt: ${mqtt.host}:${mqtt.port} ${
+    mqtt.useSSL ? "SSL" : "noSSL"
+  }`;
+  elDebug.appendChild(elDiv);
+  // alternative mqttCfgUrl
+  let elInput = document.createElement("input");
+  elInput.setAttribute("id", "mqttCfgUrl");
+  elInput.setAttribute("type", "text");
+  elInput.setAttribute("size", "40");
+  elInput.setAttribute("style", "field-sizing: content;");
+  elInput.setAttribute(
+    "placeholder",
+    "mqttCfgUrl like config.json or https://srv.lan/mqtt.json"
+  );
+  elDebug.appendChild(elInput);
+  let elButton = document.createElement("button");
+  elButton.innerHTML = "set mqttCfgUrl";
+  elButton.addEventListener("click", () => {
+    const url = document.getElementById("mqttCfgUrl").value;
+    window.location.hash = `#mqttCfgUrl=${url}`;
+    window.location.reload();
+  });
+  elDiv = document.createElement("div");
+  elDiv.innerHTML = "connection state: " + mqttIface.getState();
+  elDebug.appendChild(elDiv);
+  elDiv = document.createElement("div");
+  elDiv.innerHTML = "mode: " + config.getMode();
+  elDebug.appendChild(elDiv);
+  elDiv = document.createElement("div");
+  elDiv.innerHTML = "connect count: " + mqttIface.getConnectionCount();
+  elDebug.appendChild(elDiv);
+  elDiv = document.createElement("div");
+  elDiv.innerHTML = "disconnect count: " + mqttIface.getDisconnectCount();
+  elDebug.appendChild(elDiv);
+  elDiv = document.createElement("div");
+  elDiv.innerHTML = "message count: " + mqttIface.getMessageCount();
+  elDebug.appendChild(elDiv);
+  elDiv = document.createElement("div");
+  // get all keys starting with "config-"
+  let cfgKeys = [];
+  for (let ii = 0; ii < localStorage.length; ii++) {
+    const key = localStorage.key(ii);
+    if (key.startsWith("config-")) {
+      const subkey = key.substring(7);
+      cfgKeys.push(`<a href="#${subkey}">${key}</a>`);
+    }
+  }
+  elDiv.innerHTML = "screens: " + cfgKeys.join(", ");
+  elDebug.appendChild(elDiv);
+  elButton = document.createElement("button");
+  elButton.innerHTML = "localStorage.clear()";
+  elButton.addEventListener("click", () => {
+    localStorage.clear();
+  });
+  elDebug.appendChild(elButton);
+  elButton = document.createElement("button");
+  elButton.innerHTML = "reload()";
+  elButton.addEventListener("click", () => {
+    window.location.reload();
+  });
+  elDebug.appendChild(elButton);
+  elButton = document.createElement("button");
+  elButton.innerHTML = "reset()";
+  elButton.addEventListener("click", () => {
+    config.clearConfig();
+    window.location.reload();
+  });
+  elDebug.appendChild(elButton);
+  elDebug.appendChild(document.createElement("hr"));
+  // input for screen name
+  elDiv = document.createElement("input");
+  elDiv.setAttribute("id", "screenName");
+  elDiv.setAttribute("type", "text");
+  elDiv.setAttribute("placeholder", "screen name");
+  elDebug.appendChild(elDiv);
+  // button for adding screen
+  elButton = document.createElement("button");
+  elButton.innerHTML = "add screen";
+  elButton.addEventListener("click", () => {
+    const screenName = document.getElementById("screenName").value;
+    if (screenName !== "") {
+      window.location.hash = `#${screenName}`;
+      window.location.reload();
+    }
+  });
+  elDebug.appendChild(elButton);
+  elDebug.appendChild(document.createElement("hr"));
+};
+
+let elDebug = document.getElementById("debug");
+
 const onLoad = () => {
   showInit();
   checkHash();
+  elDebug = document.getElementById("debug");
+  if (elDebug !== undefined && elDebug !== null) {
+    elDebug.addEventListener("click", (e) => {
+      e.stopPropagation();
+    });
+    elDebug.style.display = "none";
+  } else {
+    console.error("elDebug not found");
+  }
+  document.body.addEventListener("click", showDebug);
   const mqtt = config.getMqtt();
   mqttIface = msgSrvMqtt(
     mqtt.host,

@@ -32,7 +32,7 @@ const defConfig = {
   uuid: uuidv4(),
   created: new Date().toISOString(),
   secCode: "1234",
-  topics: ["projector-world"],
+  topics: [],
   knownUUIDs: [],
 };
 
@@ -42,23 +42,23 @@ const Config = () => {
   if (!tmpScreenId.includes("=")) {
     // force screenId
     var forceScreenId = tmpScreenId;
-    console.log("forceScreenId:", forceScreenId);
+    // console.log("forceScreenId:", forceScreenId);
   }
   const screenId = forceScreenId || "def";
-  console.log("screenId:", screenId);
+  // console.log("screenId:", screenId);
   const confId = `config-${screenId}`;
   const clearConfig = () => {
-    console.log("clearConfig: confId", confId);
+    // console.log("clearConfig: confId", confId);
     window.localStorage.setItem(confId, JSON.stringify(defConfig));
     config = defConfig;
-    console.log("config:", JSON.stringify(config));
+    // console.log("config:", JSON.stringify(config));
   };
   const loadConfig = () => {
     let x_config = window.localStorage.getItem(confId);
     if (typeof x_config === "undefined" || x_config === null) {
       clearConfig();
     }
-    console.log("loadConfig: confId = ", confId);
+    // console.log("loadConfig: confId = ", confId);
     config = JSON.parse(window.localStorage.getItem(confId));
   };
   const saveConfig = () => {

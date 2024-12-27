@@ -16,20 +16,27 @@ export const msgSrvMqtt = (
   onConnect,
   onDisconnect
 ) => {
+  let connectionCount = 0;
+  let disconnectCount = 0;
+  let messageCount = 0;
+
   const onConnectLocal = () => {
-    console.log("onConnect");
-    console.log("Subscribe own topic:", subscribe_own_topic);
+    connectionCount++;
+    // console.log("onConnect");
+    // console.log("Subscribe own topic:", subscribe_own_topic);
     client.subscribe(subscribe_own_topic);
     onConnect();
   };
   const onConnectionLost = (reconnect) => (responseObject) => {
     if (responseObject.errorCode !== 0) {
+      disconnectCount++;
       console.log("onConnectionLost:" + responseObject.errorMessage);
       onDisconnect();
       setTimeout(reconnect, 2000);
     }
   };
   const onMessageArrived = (message) => {
+    messageCount++;
     console.log(
       "onMessageArrived:",
       message.payloadString,
@@ -43,6 +50,15 @@ export const msgSrvMqtt = (
     }
   };
   const iface = {
+    getConnectionCount: () => connectionCount,
+    getDisconnectCount: () => disconnectCount,
+    getMessageCount: () => messageCount,
+    getState: () => {
+      if (client) {
+        return client.isConnected();
+      }
+      return false;
+    },
     subscribe: (topic) => {
       console.log("subscribe:", topic);
       client.subscribe(topic);

@@ -9,7 +9,7 @@ export const makeQRSVG = (data) => {
   // remove comment line from generated svg, ugly hack
   svgLines = svgLines.slice(1);
   const svgPatched = svgLines.join("\n");
-  console.log(svgPatched);
+  // console.log(svgPatched);
   return svgPatched;
 };
 window.makeQRSVG = makeQRSVG;
@@ -23,8 +23,10 @@ const copyToClipboard = (event) => {
 
 export const showQr = () => {
   const url = new URL(window.location.href);
-  let op = "#pair=" + config.getUUID();
-  console.log("showQr:op=" + op);
+  // let op = "#pair=" + config.getUUID();
+  const mqttCfg = config.getMqtt();
+  let op = `#pair://${mqttCfg.host}:${mqttCfg.port}/${config.getUUID()}`;
+  // console.log("showQr:op=" + op);
   url.hash = op;
   let qr = makeQRSVG(url.href);
   const elMain = document.getElementById("main");
