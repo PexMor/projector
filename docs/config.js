@@ -39,7 +39,7 @@ const defConfig = {
 const Config = () => {
   let config = defConfig;
   const tmpScreenId = window.location.hash.substring(1) || "";
-  if (!tmpScreenId.includes("=")) {
+  if (!tmpScreenId.includes("=") && !tmpScreenId.startsWith("pair")) {
     // force screenId
     var forceScreenId = tmpScreenId;
     // console.log("forceScreenId:", forceScreenId);
