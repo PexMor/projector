@@ -92,14 +92,16 @@ const onConnect = () => {
       let alaUrl = hash.substring(1);
       let url = new URL(alaUrl);
       const mqtt = config.getMqtt();
-      if (url.host !== mqtt.host || url.port !== mqtt.port || !mqtt.useSSL) {
+      // ssl is forced
+      console.log(mqtt, url.hostname, url.port);
+      if (url.hostname == mqtt.host && url.port == mqtt.port && mqtt.useSSL) {
+        console.log("We have correct mqtt settings");
+      } else {
         // reconfigure mqtt
-        config.setMqtt(url.host, url.port, true);
-        console.log("Reconfiguring mqtt:", url.host, url.port, "SSL");
+        config.setMqtt(url.hostname, parseInt(url.port), true);
+        console.log("Reconfiguring mqtt:", url.hostname, url.port, "SSL");
         window.location.reload();
         return;
-      } else {
-        console.log("We have correct mqtt settings");
       }
       remoteUuid = url.pathname.substring(1);
       config.setTopics([remoteUuid]);
@@ -217,21 +219,24 @@ const showDebug = () => {
     window.location.hash = `#mqttCfgUrl=${url}`;
     window.location.reload();
   });
-  elDiv = document.createElement("div");
-  elDiv.innerHTML = "connection state: " + mqttIface.getState();
-  elDebug.appendChild(elDiv);
+  elDebug.appendChild(elButton);
   elDiv = document.createElement("div");
   elDiv.innerHTML = "mode: " + config.getMode();
   elDebug.appendChild(elDiv);
-  elDiv = document.createElement("div");
-  elDiv.innerHTML = "connect count: " + mqttIface.getConnectionCount();
-  elDebug.appendChild(elDiv);
-  elDiv = document.createElement("div");
-  elDiv.innerHTML = "disconnect count: " + mqttIface.getDisconnectCount();
-  elDebug.appendChild(elDiv);
-  elDiv = document.createElement("div");
-  elDiv.innerHTML = "message count: " + mqttIface.getMessageCount();
-  elDebug.appendChild(elDiv);
+  if (mqttIface !== null && mqttIface !== undefined) {
+    elDiv = document.createElement("div");
+    elDiv.innerHTML = "connection state: " + mqttIface.getState();
+    elDebug.appendChild(elDiv);
+    elDiv = document.createElement("div");
+    elDiv.innerHTML = "connect count: " + mqttIface.getConnectionCount();
+    elDebug.appendChild(elDiv);
+    elDiv = document.createElement("div");
+    elDiv.innerHTML = "disconnect count: " + mqttIface.getDisconnectCount();
+    elDebug.appendChild(elDiv);
+    elDiv = document.createElement("div");
+    elDiv.innerHTML = "message count: " + mqttIface.getMessageCount();
+    elDebug.appendChild(elDiv);
+  }
   elDiv = document.createElement("div");
   // get all keys starting with "config-"
   let cfgKeys = [];

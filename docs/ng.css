@@ -179,6 +179,9 @@
   border: 1px dotted black;
   border-radius: 3em;
 }
+#url {
+  background-color: #cfc;
+}
 button {
   font-size: 100%;
   border-radius: 0.5em;

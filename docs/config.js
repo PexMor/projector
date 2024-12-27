@@ -88,6 +88,7 @@ const Config = () => {
       return config.mqtt;
     },
     setMqtt: (host, port, useSSL) => {
+      console.log("setMqtt:", host, port, useSSL);
       config.mqtt.host = host;
       config.mqtt.port = port;
       config.mqtt.useSSL = useSSL;

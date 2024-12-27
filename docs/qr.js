@@ -15,6 +15,7 @@ export const makeQRSVG = (data) => {
 window.makeQRSVG = makeQRSVG;
 
 const copyToClipboard = (event) => {
+  event.stopPropagation();
   const el = event.target;
   const text = el.innerHTML;
   navigator.clipboard.writeText(text);
