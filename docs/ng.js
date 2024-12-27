@@ -80,11 +80,20 @@ const onConnect = () => {
   const elStatus = document.getElementById("status");
   elStatus.setAttribute("class", "connected");
   if (config.getMode() === "projector") {
-    showQr();
     const topics = config.getTopics();
     topics.forEach((topic, ii) => {
       console.log(`topic#${ii}: ${topic}`);
     });
+    if (topics.length === 0) {
+      showQr();
+    } else {
+      for (let ii = 0; ii < topics.length; ii++) {
+        mqttIface.subscribe(topics[ii]);
+      }
+      let elMain = document.getElementById("main");
+      elMain.innerHTML = "...commands...";
+      console.log("We know the topics already");
+    }
   } else {
     const hash = window.location.hash;
     let remoteUuid = "";
@@ -209,7 +218,7 @@ const showDebug = () => {
   elInput.setAttribute("style", "field-sizing: content;");
   elInput.setAttribute(
     "placeholder",
-    "mqttCfgUrl like config.json or https://srv.lan/mqtt.json"
+    "mqttCfgUrl like config.json or http://srv.lan/mqtt.json"
   );
   elDebug.appendChild(elInput);
   let elButton = document.createElement("button");

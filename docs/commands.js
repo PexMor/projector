@@ -82,7 +82,8 @@ export const showCC = () => {
     } else {
       elButton.innerHTML = cmdVal.label;
     }
-    elButton.addEventListener("click", () => {
+    elButton.addEventListener("click", (event) => {
+      event.stopPropagation();
       if (sendMsg !== undefined) {
         sendMsg({ op: cmdId, meta: { ...cmdVal.meta } });
       } else {
