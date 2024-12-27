@@ -30,7 +30,8 @@ Inspired by:
 Start local web server (in docs folder):
 
 ```bash
-python -mhttp.server 8088
+# start server at http://localhost:8088 (with CORS)
+python -mpysrv
 ```
 
 and the open <http://localhost:8088>
