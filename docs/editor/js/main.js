@@ -135,6 +135,10 @@ const drawElemets = () => {
     elDiv.style.transform = `rotate(${attr.Rotation}deg) scale(${attr.Scale})`;
     elDiv.style.opacity = attr.Opacity;
     elDiv.style.backgroundColor = attr.BackgroundColor;
+    elDiv.style.color = attr.Color;
+    elDiv.style.fontSize = attr.FontSize;
+    elDiv.style.fontFamily = attr.FontFamily;
+    elDiv.style.fontWeight = attr.FontWeight;
     elDiv.innerText = attr.Content;
     elScreen.appendChild(elDiv);
   }
