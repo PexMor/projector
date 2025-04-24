@@ -2,6 +2,7 @@ let displaySize = {
   width: 1280 * 2,
   height: 720 * 2,
 };
+let elPreview = null;
 const tabs = {
   elements: "Pole",
   attributes: "Hodnoty",
@@ -122,11 +123,11 @@ if (sAttrs) {
   window.localStorage.setItem("elAttrs", JSON.stringify(elAttrs));
 }
 const saveElAttrs = () => {
-  console.log("saveElAttrs", elAttrs);
+  // console.log("saveElAttrs", elAttrs);
   window.localStorage.setItem("elAttrs", JSON.stringify(elAttrs));
 };
 let selElement = 0;
-
+let previewScale = 1.0;
 const drawElemets = () => {
   const elScreen = document.getElementById("overlay-screen");
   if (!elScreen) {
@@ -137,14 +138,22 @@ const drawElemets = () => {
   for (let ii = 0; ii < elAttrs.length; ii++) {
     const attr = elAttrs[ii];
     const elDiv = document.createElement("div");
-    elDiv.className = "element";
+    elDiv.className = "resize-drag";
     elDiv.id = `el-ovr-${ii}`;
     elDiv.style.width = `${attr.Width}px`;
     elDiv.style.height = `${attr.Height}px`;
     elDiv.style.position = "absolute";
     elDiv.style.left = `${attr.X}px`;
     elDiv.style.top = `${attr.Y}px`;
+    elDiv.setAttribute("data-el-id", ii);
+    elDiv.setAttribute("data-x", attr.X);
+    elDiv.setAttribute("data-y", attr.Y);
+    // elDiv.setAttribute("data-width", attr.Width);
+    // elDiv.setAttribute("data-height", attr.Height);
+    // elDiv.setAttribute("data-rotation", attr.Rotation);
+    // elDiv.setAttribute("data-scale", attr.Scale);
     elDiv.style.transform = `rotate(${attr.Rotation}deg) scale(${attr.Scale})`;
+    elDiv.style.zIndex = ii + 30;
     elDiv.style.opacity = attr.Opacity;
     elDiv.style.backgroundColor = attr.BackgroundColor;
     elDiv.style.color = attr.Color;
@@ -152,8 +161,15 @@ const drawElemets = () => {
     elDiv.style.fontFamily = attr.FontFamily;
     elDiv.style.fontWeight = attr.FontWeight;
     elDiv.innerText = attr.Content;
+    elDiv.addEventListener("click", (e) => {
+      let elId = parseInt(e.target.getAttribute("data-el-id"));
+      selEl(elId);
+      setMoveAndResizeEx(elDiv, ii);
+      // e.stopPropagation();
+    });
     elScreen.appendChild(elDiv);
   }
+  setMoveAndResize();
 };
 const createAttrs = (elBody) => {
   // create form for attributes
@@ -226,7 +242,7 @@ const createAttrs = (elBody) => {
       elInput.style.width = "100%";
       elInput.style.boxSizing = "border-box";
       elInput.style.marginBottom = "5px";
-      console.log(elAttrs, attrIdx, attr);
+      // console.log(elAttrs, attrIdx, attr);
       elInput.value = elAttrs[selElement][attr];
       elInput.addEventListener("keyup", (e) => {
         const value = e.target.value;
@@ -294,13 +310,30 @@ const selEl = (idxSelected) => {
       console.error(`Element el-${jj} or el-no not found`);
       continue;
     }
-    console.log(el);
+    // console.log(el);
     if (jj === idxSelected) {
       el.classList.add("selected");
     } else {
       el.classList.remove("selected");
     }
   }
+  for (let jj = 0; jj < elNames.length; jj++) {
+    const el = document.getElementById(`el-ovr-${jj}`);
+    if (!el) {
+      console.error(`Element el-ovr-${jj} not found`);
+      continue;
+    }
+    if (jj == selElement) {
+      el.style.border = "5px dotted red";
+      el.style.backgroundColor = elAttrs[jj].BackgroundColor;
+      el.style.color = elAttrs[jj].Color;
+    } else {
+      el.style.border = "";
+      el.style.backgroundColor = "rgba(0, 0, 0, 0.1)";
+      el.style.color = "black";
+    }
+  }
+
   updateAttrVals();
   selTab("attributes");
 };
@@ -325,8 +358,124 @@ const createElements = (elBody) => {
     selEl(0);
   }, 0);
 };
+const setMoveAndResize = () => {
+  console.log("setMoveAndResize");
+};
+const setMoveAndResizeEx = (elDiv, idx) => {
+  // console.log("setMoveAndResizeEx", elDiv, idx);
+
+  interact(elDiv)
+    .resizable({
+      // resize from all edges and corners
+      edges: { left: true, right: true, bottom: true, top: true },
+
+      listeners: {
+        move(event) {
+          var target = event.target;
+          var x =
+            (parseFloat(target.getAttribute("data-x")) || 0) +
+            event.deltaRect.left / previewScale;
+          var y =
+            (parseFloat(target.getAttribute("data-y")) || 0) +
+            event.deltaRect.top / previewScale;
+
+          target.style.left = x + "px";
+          target.style.top = y + "px";
+
+          target.style.width = event.rect.width / previewScale + "px";
+          target.style.height = event.rect.height / previewScale + "px";
+
+          target.setAttribute("data-x", x);
+          target.setAttribute("data-y", y);
+          let elId = target.getAttribute("data-el-id");
+          elAttrs[elId].X = Math.round(x);
+          elAttrs[elId].Y = Math.round(y);
+          elAttrs[elId].Width = Math.round(event.rect.width / previewScale);
+          elAttrs[elId].Height = Math.round(event.rect.height / previewScale);
+          console.log(elId, JSON.stringify(elAttrs[elId]));
+          saveElAttrs();
+          updateAttrVals();
+          // target.textContent =
+          //   Math.round(event.rect.width) +
+          //   "\u00D7" +
+          //   Math.round(event.rect.height);
+        },
+      },
+      modifiers: [
+        // interact.modifiers.snap({
+        //   targets: [
+        //     interact.snappers.grid({
+        //       x: 30 / previewScale,
+        //       y: 30 / previewScale,
+        //     }),
+        //   ],
+        //   range: Infinity,
+        //   relativePoints: [{ x: 0, y: 0 }],
+        // }),
+
+        // keep the edges inside the parent
+        interact.modifiers.restrictEdges({
+          outer: "parent",
+        }),
+
+        // minimum size
+        interact.modifiers.restrictSize({
+          min: { width: 100, height: 80 },
+        }),
+      ],
+
+      inertia: true,
+    })
+    .draggable({
+      listeners: {
+        move(event) {
+          //: window.dragMoveListener
+          var target = event.target;
+          // keep the dragged position in the data-x/data-y attributes
+          var x =
+            (parseFloat(target.getAttribute("data-x")) || 0) +
+            event.dx / previewScale;
+          var y =
+            (parseFloat(target.getAttribute("data-y")) || 0) +
+            event.dy / previewScale;
+
+          // translate the element
+          // target.style.transform = "translate(" + x + "px, " + y + "px)";
+          target.style.left = x + "px";
+          target.style.top = y + "px";
+
+          // update the posiion attributes
+          target.setAttribute("data-x", x);
+          target.setAttribute("data-y", y);
+          let elId = target.getAttribute("data-el-id");
+          elAttrs[elId].X = Math.round(x); // + elPreview.offsetLeft);
+          elAttrs[elId].Y = Math.round(y); // + elPreview.offsetTop);
+          // console.log(elId, JSON.stringify(elAttrs[elId]));
+          saveElAttrs();
+          updateAttrVals();
+        },
+      },
+      inertia: true,
+      modifiers: [
+        // interact.modifiers.snap({
+        //   targets: [
+        //     interact.snappers.grid({
+        //       x: 30 / previewScale,
+        //       y: 30 / previewScale,
+        //     }),
+        //   ],
+        //   range: Infinity,
+        //   relativePoints: [{ x: 0, y: 0 }],
+        // }),
+        interact.modifiers.restrictRect({
+          restriction: "parent",
+          // endOnly: true,
+        }),
+      ],
+    });
+};
 const onLoad = () => {
-  const elPreview = document.getElementById("preview");
+  elPreview = document.getElementById("preview");
   const elSide = document.getElementById("side");
   elSide.innerHTML = "";
   // create two tabs at the pop with container for each below
@@ -356,7 +505,7 @@ const onLoad = () => {
       elPos.className = "pos";
       elPos.innerText = "X: 0 Y: 0";
       elBody.appendChild(elPos);
-      elNo = document.createElement("span");
+      let elNo = document.createElement("span");
       elNo.id = "el-no";
       elNo.innerText = `#${selElement}`;
       elH1.appendChild(elNo);
@@ -380,6 +529,7 @@ const onLoad = () => {
     aw / displaySize.width, //* window.devicePixelRatio,
     aw / displaySize.height //* window.devicePixelRatio
   );
+  previewScale = scale;
   console.log(
     elScreen.style.transform,
     `pWxH:${elPreview.clientWidth}x${elPreview.clientHeight}`,
@@ -403,17 +553,17 @@ const onLoad = () => {
   elScreen.style.border = "1px solid red";
   elScreen.style.boxSizing = "border-box";
   elPreview.appendChild(elScreen);
-  elScreen.addEventListener("mousedown", (e) => {
-    // console.log("mousedown", e.clientX, e.clientY);
-    const x = Math.floor(
-      (e.clientX - elScreen.offsetLeft - elPreview.offsetLeft) / scale
-    );
-    const y = Math.floor(
-      (e.clientY - elScreen.offsetTop - elPreview.offsetTop) / scale
-    );
-    setPos(x, y);
-  });
-  elOverlay = document.createElement("div");
+  // elScreen.addEventListener("mousedown", (e) => {
+  //   // console.log("mousedown", e.clientX, e.clientY);
+  //   const x = Math.floor(
+  //     (e.clientX - elScreen.offsetLeft - elPreview.offsetLeft) / scale
+  //   );
+  //   const y = Math.floor(
+  //     (e.clientY - elScreen.offsetTop - elPreview.offsetTop) / scale
+  //   );
+  //   setPos(x, y);
+  // });
+  let elOverlay = document.createElement("div");
   elOverlay.id = "overlay-screen";
   elOverlay.className = "overlay-screen";
   elOverlay.style.width = `${displaySize.width}px`;
