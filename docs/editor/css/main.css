@@ -81,13 +81,13 @@ body {
   gap: 5px;
   padding: 10px;
 }
-.element {
+/* .element {
   border: 1px dotted red;
   padding: 5px;
   background-color: #fff;
   border-radius: 5px;
   cursor: pointer;
-}
+} */
 .selected {
   background-color: #8f8;
 }

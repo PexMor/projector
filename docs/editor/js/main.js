@@ -27,6 +27,18 @@ let elPos = null;
 const setPos = (x, y) => {
   if (!elPos) return;
   elPos.innerText = `X: ${x} Y: ${y}`;
+  const elX = document.getElementById("X");
+  const elY = document.getElementById("Y");
+  if (!elX || !elY) {
+    console.error("Element X or Y not found");
+    return;
+  }
+  elX.value = x;
+  elY.value = y;
+  elAttrs[selElement].X = x;
+  elAttrs[selElement].Y = y;
+  saveElAttrs();
+  drawElemets();
   //   console.log("setPos", x, y);
 };
 const defaultAttrs = {
@@ -393,8 +405,12 @@ const onLoad = () => {
   elPreview.appendChild(elScreen);
   elScreen.addEventListener("mousedown", (e) => {
     // console.log("mousedown", e.clientX, e.clientY);
-    const x = Math.floor(e.clientX / scale);
-    const y = Math.floor(e.clientY / scale);
+    const x = Math.floor(
+      (e.clientX - elScreen.offsetLeft - elPreview.offsetLeft) / scale
+    );
+    const y = Math.floor(
+      (e.clientY - elScreen.offsetTop - elPreview.offsetTop) / scale
+    );
     setPos(x, y);
   });
   elOverlay = document.createElement("div");
