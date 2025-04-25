@@ -1,11 +1,35 @@
+import { config } from "../../config.js";
+import {
+  msgSrvMqtt,
+  mqtt_app_prefix_by_uuid,
+  mqtt_app_prefix_group,
+} from "../../mqtt.js";
+let mqttIface = null;
+let dataUrl = "http://localhost:8099/api/data_point";
+const mySendMsg = (value) => {
+  if (mqttIface !== null && mqttIface !== undefined) {
+    const topics = config.getTopics();
+    if (topics.length === 0) {
+      console.error("No topics defined");
+      return;
+    }
+    for (const topic of topics) {
+      // console.log("sendMsg:", topic, value);
+      mqttIface.send(topic, JSON.stringify({ val: value }));
+    }
+  } else {
+    console.error("mqttIface not defined");
+  }
+};
+
 let displaySize = {
   width: 1280 * 2,
   height: 720 * 2,
 };
 let elPreview = null;
 const tabs = {
-  elements: "Pole",
-  attributes: "Hodnoty",
+  elements: "Objekty",
+  attributes: "Parametry",
 };
 const selTab = (name) => {
   for (const tab in tabs) {
@@ -40,7 +64,6 @@ const setPos = (x, y) => {
   elAttrs[selElement].Y = y;
   saveElAttrs();
   drawElemets();
-  //   console.log("setPos", x, y);
 };
 const defaultAttrs = {
   X: 0,
@@ -99,8 +122,8 @@ let elAttrs = elNames.map((elName) => {
   return {
     X: 0,
     Y: 0,
-    Width: 100,
-    Height: 100,
+    Width: 200,
+    Height: 150,
     Rotation: 0,
     Scale: 1,
     Opacity: 1,
@@ -125,6 +148,22 @@ if (sAttrs) {
 const saveElAttrs = () => {
   // console.log("saveElAttrs", elAttrs);
   window.localStorage.setItem("elAttrs", JSON.stringify(elAttrs));
+  if (dataUrl) {
+    fetch(dataUrl, {
+      method: "POST",
+      body: JSON.stringify(elAttrs),
+      contentType: "application/json",
+    })
+      .then((response) => {
+        if (!response.ok) {
+          console.error("Error saving data");
+        }
+      })
+      .catch((error) => {
+        console.error("Error saving data", error);
+      });
+  }
+  mySendMsg({ msg: "attrsUpdated" });
 };
 let selElement = 0;
 let previewScale = 1.0;
@@ -148,10 +187,6 @@ const drawElemets = () => {
     elDiv.setAttribute("data-el-id", ii);
     elDiv.setAttribute("data-x", attr.X);
     elDiv.setAttribute("data-y", attr.Y);
-    // elDiv.setAttribute("data-width", attr.Width);
-    // elDiv.setAttribute("data-height", attr.Height);
-    // elDiv.setAttribute("data-rotation", attr.Rotation);
-    // elDiv.setAttribute("data-scale", attr.Scale);
     elDiv.style.transform = `rotate(${attr.Rotation}deg) scale(${attr.Scale})`;
     elDiv.style.zIndex = ii + 30;
     elDiv.style.opacity = attr.Opacity;
@@ -165,7 +200,6 @@ const drawElemets = () => {
       let elId = parseInt(e.target.getAttribute("data-el-id"));
       selEl(elId);
       setMoveAndResizeEx(elDiv, ii);
-      // e.stopPropagation();
     });
     elScreen.appendChild(elDiv);
   }
@@ -297,7 +331,6 @@ const updateAttrVals = () => {
 };
 const selEl = (idxSelected) => {
   selElement = idxSelected;
-  // console.log("selEl", ii);
   const elNo = document.getElementById("el-no");
   if (!elNo) {
     console.error("Element el-no not found");
@@ -310,7 +343,6 @@ const selEl = (idxSelected) => {
       console.error(`Element el-${jj} or el-no not found`);
       continue;
     }
-    // console.log(el);
     if (jj === idxSelected) {
       el.classList.add("selected");
     } else {
@@ -329,7 +361,7 @@ const selEl = (idxSelected) => {
       el.style.color = elAttrs[jj].Color;
     } else {
       el.style.border = "";
-      el.style.backgroundColor = "rgba(0, 0, 0, 0.1)";
+      el.style.backgroundColor = "rgba(200, 200, 200, 0.3)";
       el.style.color = "black";
     }
   }
@@ -349,7 +381,6 @@ const createElements = (elBody) => {
     elDiv.innerText = elName;
     elDivs.appendChild(elDiv);
     elDiv.addEventListener("click", () => {
-      // console.log("click", elName);
       selEl(ii);
     });
   }
@@ -362,8 +393,6 @@ const setMoveAndResize = () => {
   console.log("setMoveAndResize");
 };
 const setMoveAndResizeEx = (elDiv, idx) => {
-  // console.log("setMoveAndResizeEx", elDiv, idx);
-
   interact(elDiv)
     .resizable({
       // resize from all edges and corners
@@ -395,10 +424,6 @@ const setMoveAndResizeEx = (elDiv, idx) => {
           console.log(elId, JSON.stringify(elAttrs[elId]));
           saveElAttrs();
           updateAttrVals();
-          // target.textContent =
-          //   Math.round(event.rect.width) +
-          //   "\u00D7" +
-          //   Math.round(event.rect.height);
         },
       },
       modifiers: [
@@ -474,6 +499,17 @@ const setMoveAndResizeEx = (elDiv, idx) => {
       ],
     });
 };
+const onMessage = (topic, message) => {
+  console.log("onMessage", topic, message);
+  const msg = JSON.parse(message);
+};
+const onConnect = () => {
+  console.log("onConnect");
+  mySendMsg({ msg: "Hello from editor" });
+};
+const onDisconnect = () => {
+  console.log("onDisconnect");
+};
 const onLoad = () => {
   elPreview = document.getElementById("preview");
   const elSide = document.getElementById("side");
@@ -525,10 +561,7 @@ const onLoad = () => {
   elScreen.className = "preview-screen";
   const aw = elPreview.clientWidth - 20;
   const ah = elPreview.clientHeight - 20;
-  const scale = Math.min(
-    aw / displaySize.width, //* window.devicePixelRatio,
-    aw / displaySize.height //* window.devicePixelRatio
-  );
+  const scale = Math.min(aw / displaySize.width, aw / displaySize.height);
   previewScale = scale;
   console.log(
     elScreen.style.transform,
@@ -544,7 +577,6 @@ const onLoad = () => {
   elScreen.style.transform = `scale(${scale})`;
   elScreen.style.transformOrigin = "top left";
   elScreen.style.overflow = "scroll";
-  //   elScreen.style.position = "absolute";
   elScreen.style.position = "relative";
   elScreen.style.top = "0px";
   elScreen.style.left = "0px";
@@ -553,16 +585,6 @@ const onLoad = () => {
   elScreen.style.border = "1px solid red";
   elScreen.style.boxSizing = "border-box";
   elPreview.appendChild(elScreen);
-  // elScreen.addEventListener("mousedown", (e) => {
-  //   // console.log("mousedown", e.clientX, e.clientY);
-  //   const x = Math.floor(
-  //     (e.clientX - elScreen.offsetLeft - elPreview.offsetLeft) / scale
-  //   );
-  //   const y = Math.floor(
-  //     (e.clientY - elScreen.offsetTop - elPreview.offsetTop) / scale
-  //   );
-  //   setPos(x, y);
-  // });
   let elOverlay = document.createElement("div");
   elOverlay.id = "overlay-screen";
   elOverlay.className = "overlay-screen";
@@ -572,5 +594,17 @@ const onLoad = () => {
   elOverlay.style.transformOrigin = "top left";
   elPreview.appendChild(elOverlay);
   drawElemets();
+  const mqtt = config.getMqtt();
+  config.setTopics(["/pexmor/editor/test"]);
+  mqttIface = msgSrvMqtt(
+    mqtt.host,
+    mqtt.port,
+    mqtt.useSSL,
+    "projector" + Math.random().toString(16).substring(2, 8),
+    config.getOwnTopic(),
+    onMessage,
+    onConnect,
+    onDisconnect
+  );
 };
 window.addEventListener("load", onLoad);

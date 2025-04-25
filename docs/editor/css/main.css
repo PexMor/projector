@@ -81,13 +81,6 @@ body {
   gap: 5px;
   padding: 10px;
 }
-/* .element {
-  border: 1px dotted red;
-  padding: 5px;
-  background-color: #fff;
-  border-radius: 5px;
-  cursor: pointer;
-} */
 .selected {
   background-color: #8f8;
 }
@@ -98,15 +91,6 @@ body {
 }
 .resize-drag {
   border-radius: 8px;
-  /* width: 120px;
-  padding: 20px;
-  margin: 1rem;
-  background-color: #29e;
-  color: white;
-  font-size: 20px;
-  font-family: sans-serif; */
-
   touch-action: none;
-
   box-sizing: border-box;
 }

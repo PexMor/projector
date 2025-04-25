@@ -35,3 +35,13 @@ python -mpysrv
 ```
 
 and the open <http://localhost:8088>
+
+## Editor
+
+A simple object position editor concept is included in the project.
+
+Reachable as:
+
+- <https://pexmor.github.io/projector/editor/> from Github pages
+- <http://localhost:8099/> from local web server which also includes the `data_point` server for saving and serving the `elAttrs`
+- to run local server: `python -mpysrv.dp`
