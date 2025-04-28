@@ -1,0 +1,20 @@
+#poll-box,
+#mqtt-box {
+  display: block;
+  padding: 10px;
+  margin: 10px;
+  border: 1px dotted black;
+  font-family: Arial, Helvetica, sans-serif;
+}
+#poll-box {
+  background-color: #f0f0f0;
+}
+#mqtt-box {
+  background-color: #e0f7fa;
+}
+pre {
+  font-family: monospace;
+}
+.my-buts {
+  padding: 10px;
+}
