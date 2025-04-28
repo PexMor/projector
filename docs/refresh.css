@@ -18,3 +18,9 @@ pre {
 .my-buts {
   padding: 10px;
 }
+#stop-mqtt {
+  display: none;
+}
+#stop-poll {
+  display: none;
+}

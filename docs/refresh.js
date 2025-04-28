@@ -14,6 +14,7 @@ export const msgSrvMqtt = (
     let connectionCount = 0;
     let disconnectCount = 0;
     let messageCount = 0;
+    let timeoutHandle = null;
 
     const onConnectLocal = () => {
         connectionCount++;
@@ -25,6 +26,7 @@ export const msgSrvMqtt = (
         }
     };
     const onConnectionLost = (reconnect) => (responseObject) => {
+        console.log("onConnectionLost:", reconnect, responseObject);
         if (responseObject.errorCode !== 0) {
             disconnectCount++;
             if (onDisconnect) {
@@ -32,7 +34,7 @@ export const msgSrvMqtt = (
             } else {
                 console.log("onDisconnect");
             }
-            setTimeout(reconnect, reconnectInMillis);
+            timeoutHandle = setTimeout(reconnect, reconnectInMillis);
         }
     };
     const onMessageArrived = (message) => {
@@ -69,7 +71,13 @@ export const msgSrvMqtt = (
             client.unsubscribe(topic);
         },
         disconnect: () => {
-            client.disconnect();
+            if (client && client.isConnected()) {
+                client.disconnect();
+            }
+            if (timeoutHandle) {
+                clearTimeout(timeoutHandle);
+                timeoutHandle = null;
+            }
         },
         send: (dest, value) => {
             let message = new Paho.MQTT.Message(value);
@@ -174,12 +182,15 @@ const onLoad = () => {
     const butStartPoll = document.getElementById("start-poll");
     const butStopPoll = document.getElementById("stop-poll");
     butStartMqtt.addEventListener("click", () => {
+        butStartMqtt.style.display = "none";
+        butStopMqtt.style.display = "inline-block";
         const mqtt = {
             host: "broker.emqx.io",
             port: 8084,
             useSSL: true,
             clientId: "pinger" + Math.random().toString(16).substring(2, 8),
             topics: ["/pexmor/pinger"],
+            own_topic: "pexmor/unique-id/like/42"
         };
         console.log(`mqtt(${mqtt.clientId}): ${mqtt.host}:${mqtt.port} TLS:${mqtt.useSSL} topics: ${mqtt.topics}`);
         mqttIface = msgSrvMqtt(
@@ -187,22 +198,28 @@ const onLoad = () => {
             mqtt.port,
             mqtt.useSSL,
             mqtt.clientId,
-            mqtt.topics,
-            undefined,// onMessage,
-            undefined,// onConnect,
-            undefined,// onDisconnect
+            mqtt.own_topic,
+            onMessage,
+            onConnect,
+            onDisconnect
         );
     });
     butStopMqtt.addEventListener("click", () => {
+        butStartMqtt.style.display = "inline-block";
+        butStopMqtt.style.display = "none";
         if (mqttIface !== null) {
             mqttIface.disconnect();
             mqttIface = null;
         }
     });
     butStartPoll.addEventListener("click", () => {
+        butStartPoll.style.display = "none";
+        butStopPoll.style.display = "inline-block";
         pollServer();
     });
     butStopPoll.addEventListener("click", () => {
+        butStartPoll.style.display = "inline-block";
+        butStopPoll.style.display = "none";
         if (pollHandle !== null) {
             clearInterval(pollHandle);
             pollHandle = null;
