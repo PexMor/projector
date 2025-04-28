@@ -127,9 +127,8 @@ const onMessage = (topic, message) => {
         pre.innerText = json.stringify(msg, null, 2);
         elMqtt.appendChild(pre);
     } catch (e) {
-        const msg = JSON.parse(message);
         let pre = document.createElement("pre");
-        pre.innerText = msg
+        pre.innerText = JSON.stringify(message, null, 2);
         elMqtt.appendChild(pre);
     };
 };
@@ -177,21 +176,22 @@ const pollServer = () => {
 // ========================================================
 // a function to handle the load event
 const onLoad = () => {
+    const mqtt = {
+        host: "broker.emqx.io",
+        port: 8084,
+        useSSL: true,
+        clientId: "pinger" + Math.random().toString(16).substring(2, 8),
+        topics: ["/pexmor/pinger"],
+        own_topic: "pexmor/unique-id/like/42"
+    };
     const butStartMqtt = document.getElementById("start-mqtt");
     const butStopMqtt = document.getElementById("stop-mqtt");
     const butStartPoll = document.getElementById("start-poll");
     const butStopPoll = document.getElementById("stop-poll");
+    const butSendMqtt = document.getElementById("send-mqtt");
     butStartMqtt.addEventListener("click", () => {
         butStartMqtt.style.display = "none";
         butStopMqtt.style.display = "inline-block";
-        const mqtt = {
-            host: "broker.emqx.io",
-            port: 8084,
-            useSSL: true,
-            clientId: "pinger" + Math.random().toString(16).substring(2, 8),
-            topics: ["/pexmor/pinger"],
-            own_topic: "pexmor/unique-id/like/42"
-        };
         console.log(`mqtt(${mqtt.clientId}): ${mqtt.host}:${mqtt.port} TLS:${mqtt.useSSL} topics: ${mqtt.topics}`);
         mqttIface = msgSrvMqtt(
             mqtt.host,
@@ -224,6 +224,9 @@ const onLoad = () => {
             clearInterval(pollHandle);
             pollHandle = null;
         }
+    });
+    butSendMqtt.addEventListener("click", () => {
+        sendMsg([mqtt.own_topic], "Ping @ " + new Date().toISOString());
     });
 };
 window.addEventListener("load", onLoad);
