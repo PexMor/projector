@@ -183,7 +183,7 @@ const checkHash = (win, e) => {
   }
 };
 
-const showDebug = () => {
+const toggleDebug = () => {
   if (elDebug.style.display === "none" || elDebug.style.display === "") {
     elDebug.style.display = "block";
   } else {
@@ -299,6 +299,14 @@ const showDebug = () => {
 };
 
 let elDebug = document.getElementById("debug");
+elDebug.addEventListener("click", (e) => {
+  if (e.target !== elDebug) {
+    return;
+  }
+  e.stopPropagation();
+  e.preventDefault();
+  toggleDebug();
+});
 
 const onLoad = () => {
   showInit();
@@ -312,7 +320,7 @@ const onLoad = () => {
   } else {
     console.error("elDebug not found");
   }
-  document.body.addEventListener("click", showDebug);
+  document.body.addEventListener("click", toggleDebug);
   const mqtt = config.getMqtt();
   mqttIface = msgSrvMqtt(
     mqtt.host,
