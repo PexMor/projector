@@ -25,6 +25,10 @@
         </div>
         <div id="mqtt-box"></div>
         <div id="poll-box"></div>
+        <div id="hints">
+            <pre>mosquitto_pub -h broker.emqx.io -p 1883 -t pexmor/unique-id/like/42 -m '{"test":"test"}'</pre>
+            <pre>wss://broker.emqx.io:8084/mqtt</pre>
+        </div>
     </div>
     <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js"
         integrity="sha384-IQsoLXl5PILFhosVNubq5LC7Qb9DXgDA9i+tQ8Zj3iwWAwPtgFTxbJ8NT4GN1R8p"
