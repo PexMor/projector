@@ -17,8 +17,8 @@
 }
 #container > button {
   font-size: 100%;
-  padding: 0.4em;
-  margin: 1em 1em 1em 1em;
+  padding: 0.2em;
+  margin: 0.3em;
   background-color: silver;
 }
 #container > div {
@@ -33,6 +33,10 @@
   align-items: center;
   height: 100%;
   width: 100%;
+  white-space: wrap;
+  word-break: break-all;
+  text-wrap: wrap;
+  overflow: hidden;
 }
 #containerSub > div {
   text-wrap: pretty;
@@ -167,17 +171,17 @@
 }
 #debug {
   display: none;
-  width: calc(100% - 2 * 3em);
-  height: calc(100% - 2 * 3em);
+  width: calc(100% - 1em);
+  height: calc(100% - 1em);
   background-color: rgba(200, 200, 200, 0.92);
-  position: fixed;
+  position: absolute;
   z-index: 20;
   top: 0;
   left: 0;
-  margin: 3em;
-  padding: 1em;
+  margin: 0.5em;
+  padding: 0.5em;
   border: 1px dotted black;
-  border-radius: 3em;
+  border-radius: 0.5em;
 }
 #url {
   background-color: #cfc;
@@ -188,6 +192,10 @@ button {
   padding: 0.4em;
   margin: 0.5em;
   background-color: silver;
+}
+textarea {
+  width: calc(100% - 0.5em);
+  height: 5em;
 }
 @media (orientation: landscape) {
   #container {

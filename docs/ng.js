@@ -207,12 +207,11 @@ const showDebug = () => {
   elDebug.appendChild(elDiv);
   elDiv = document.createElement("div");
   const mqtt = config.getMqtt();
-  elDiv.innerHTML = `mqtt: ${mqtt.host}:${mqtt.port} ${
-    mqtt.useSSL ? "SSL" : "noSSL"
-  }`;
+  elDiv.innerHTML = `mqtt: ${mqtt.host}:${mqtt.port} ${mqtt.useSSL ? "SSL" : "noSSL"
+    }`;
   elDebug.appendChild(elDiv);
   // alternative mqttCfgUrl
-  let elInput = document.createElement("input");
+  let elInput = document.createElement("textarea");
   elInput.setAttribute("id", "mqttCfgUrl");
   elInput.setAttribute("type", "text");
   elInput.setAttribute("size", "40");
